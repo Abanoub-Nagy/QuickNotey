@@ -34,7 +34,13 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.navigation.compose.NavHost
+import androidx.navigation.compose.composable
+import androidx.navigation.compose.rememberNavController
 import com.example.noteyapp.data.db.NoteDatabase
+import com.example.noteyapp.feature.home.HomeScreen
+import com.example.noteyapp.feature.signin.SignInScreen
+import com.example.noteyapp.feature.signup.SignUpScreen
 import com.example.noteyapp.model.Note
 import com.example.noteyapp.screen.ListNotesScreen
 import com.example.noteyapp.ui.theme.NoteyTheme
@@ -50,127 +56,19 @@ fun App(
     database: NoteDatabase
 ) {
     NoteyTheme {
-        val viewModel = viewModel {
-            HomeViewModel(
-                database
-            )
-        }
-        val bottomSheetState = rememberModalBottomSheetState()
-        var showBottomSheet by remember { mutableStateOf(false) }
-        val coroutineScope = rememberCoroutineScope()
-
-        Scaffold(
-            floatingActionButton = {
-                FloatingActionButton(onClick = {
-                    showBottomSheet = true
-                }, shape = CircleShape) {
-                    Text(
-                        text = "+", fontSize = 24.sp
-                    )
-                }
-            }) { paddingValue ->
-            val notes = viewModel.notes.collectAsStateWithLifecycle(emptyList())
-            Column(
-                modifier = Modifier.padding(paddingValue)
-            ) {
-                Text(
-                    text = "Notes",
-                    fontWeight = Bold,
-                    modifier = Modifier.fillMaxWidth().padding(16.dp),
-                    fontSize = 32.sp
-                )
-                if (notes.value.isNotEmpty()) {
-                    ListNotesScreen(notes.value)
-                } else {
-                    EmptyView()
-                }
+        val navController = rememberNavController()
+        NavHost(navController, startDestination = "home"){
+            composable(route = "home") {
+                HomeScreen(database, navController)
             }
-            if (showBottomSheet) {
-                ModalBottomSheet(
-                    onDismissRequest = { showBottomSheet = false }, sheetState = bottomSheetState
-                ) {
-                    AddItemDialog(onCancel = {
-                        coroutineScope.launch {
-                            bottomSheetState.hide()
-                        }
-                        showBottomSheet = false
-                    }, {
-                        viewModel.addNotes(it)
-                        coroutineScope.launch {
-                            bottomSheetState.hide()
-                        }
-                        showBottomSheet = false
-                    })
-                }
+            composable(route = "signup") {
+                SignUpScreen(navController)
             }
-        }
-    }
-}
-
-@Composable
-fun AddItemDialog(onCancel: () -> Unit, onSave: (Note) -> Unit) {
-    var title by remember { mutableStateOf("") }
-    var description by remember { mutableStateOf("") }
-
-    Column(modifier = Modifier.padding(16.dp)) {
-        val colour = TextFieldDefaults.colors(
-            focusedContainerColor = Transparent,
-            unfocusedContainerColor = Transparent,
-        )
-
-        TextField(
-            value = title,
-            onValueChange = { title = it },
-            colors = colour,
-            modifier = Modifier.fillMaxWidth(),
-            placeholder = {
-                Text(text = "Title", fontSize = 22.sp)
-            },
-            textStyle = TextStyle(fontSize = 22.sp)
-        )
-        TextField(
-            value = description,
-            onValueChange = { description = it },
-            colors = colour,
-            placeholder = {
-                Text(text = "Say something")
-            },
-            modifier = Modifier.fillMaxWidth(),
-            minLines = 5
-        )
-        Row(modifier = Modifier.align(Alignment.End)) {
-            Text(text = "Cancel", modifier = Modifier.padding(8.dp).clickable {
-                onCancel()
-            })
-            Text(text = "Save", modifier = Modifier.padding(8.dp).clickable {
-                onSave(
-                    Note(
-                        title = title, description = description
-                    )
-                )
-            })
-        }
-    }
-}
-
-@Composable
-fun EmptyView() {
-    Box(modifier = Modifier.fillMaxSize()) {
-        Column(
-            modifier = Modifier.fillMaxWidth().align(Alignment.Center)
-        ) {
-            Image(
-                painterResource(Res.drawable.empty_logo),
-                contentDescription = "Compose Multiplatform",
-                modifier = Modifier.size(240.dp).align(Alignment.CenterHorizontally)
-            )
-            Text(
-                text = "Create your first note!!",
-                modifier = Modifier.align(
-                    Alignment.CenterHorizontally
-                ),
-                fontSize = 24.sp,
-            )
+            composable(route = "signin") {
+                SignInScreen(navController)
+            }
+            composable("profile") {
+            }
         }
     }
 }

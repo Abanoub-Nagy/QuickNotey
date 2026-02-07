@@ -1,4 +1,4 @@
-package com.example.noteyapp
+package com.example.noteyapp.feature.home
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
