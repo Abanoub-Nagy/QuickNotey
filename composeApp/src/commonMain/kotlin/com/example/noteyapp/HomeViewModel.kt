@@ -1,21 +1,23 @@
 package com.example.noteyapp
 
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
+import com.example.noteyapp.data.db.NoteDatabase
 import com.example.noteyapp.model.Note
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.update
-import kotlin.collections.emptyList
+import kotlinx.coroutines.launch
 
-class HomeViewModel : ViewModel() {
+class HomeViewModel(
+    val noteDatabase: NoteDatabase,
+) : ViewModel() {
 
-    private val _notes = MutableStateFlow<List<Note>>(emptyList())
-    val notes: StateFlow<List<Note>> = _notes
+    private val dao = noteDatabase.noteDao()
+    private val _notes = dao.getAllNotes()
+    val notes = _notes
 
 
     fun addNotes(note: Note) {
-        _notes.update {
-            it + note
+        viewModelScope.launch {
+            dao.insertNote(note)
         }
     }
 

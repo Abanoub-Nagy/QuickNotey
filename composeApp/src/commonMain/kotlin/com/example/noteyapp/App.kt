@@ -34,6 +34,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.noteyapp.data.db.NoteDatabase
 import com.example.noteyapp.model.Note
 import com.example.noteyapp.screen.ListNotesScreen
 import com.example.noteyapp.ui.theme.NoteyTheme
@@ -45,10 +46,14 @@ import org.jetbrains.compose.resources.painterResource
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 @Preview
-fun App() {
+fun App(
+    database: NoteDatabase
+) {
     NoteyTheme {
         val viewModel = viewModel {
-            HomeViewModel()
+            HomeViewModel(
+                database
+            )
         }
         val bottomSheetState = rememberModalBottomSheetState()
         var showBottomSheet by remember { mutableStateOf(false) }
@@ -64,7 +69,7 @@ fun App() {
                     )
                 }
             }) { paddingValue ->
-            val notes = viewModel.notes.collectAsStateWithLifecycle()
+            val notes = viewModel.notes.collectAsStateWithLifecycle(emptyList())
             Column(
                 modifier = Modifier.padding(paddingValue)
             ) {
