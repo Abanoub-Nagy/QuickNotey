@@ -1,4 +1,4 @@
-package com.example.noteyapp.feature.signin
+package com.example.noteyapp.feature.signup
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -21,32 +21,32 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
-import com.example.noteyapp.feature.signup.AuthNavigation
-import com.example.noteyapp.feature.signup.SignUpState
 import kotlinx.coroutines.flow.collectLatest
 
 
 @Composable
-fun SignInScreen(navController: NavController) {
-    val viewModel = viewModel<SignInViewModel>()
+fun SignUpScreen(navController: NavController) {
+    val viewModel = viewModel<SignUpViewModel>()
     val emailState = viewModel.email.collectAsStateWithLifecycle()
     val passwordState = viewModel.password.collectAsStateWithLifecycle()
+    val confirmPasswordState = viewModel.confirmPassword.collectAsStateWithLifecycle()
     val state = viewModel.state.collectAsStateWithLifecycle()
 
     LaunchedEffect(true) {
         viewModel.navigation.collectLatest {
             when (it) {
                 is AuthNavigation.NavigateToHome -> {
-                    navController.getBackStackEntry("home").savedStateHandle["email"] =
-                        emailState.value
-                    navController.popBackStack("home", inclusive = false)
+                    navController.previousBackStackEntry?.savedStateHandle?.set(
+                        "email", emailState.value
+                    )
+                    navController.popBackStack()
                 }
             }
         }
     }
 
     when (state.value) {
-        is SignInState.Loading -> {
+        is SignUpState.Loading -> {
             Column(
                 modifier = Modifier.fillMaxSize().padding(12.dp),
                 verticalArrangement = Arrangement.Center,
@@ -59,7 +59,7 @@ fun SignInScreen(navController: NavController) {
             }
         }
 
-        is SignInState.Failure -> {
+        is SignUpState.Failure -> {
             Column(
                 modifier = Modifier.fillMaxSize().padding(12.dp),
                 verticalArrangement = Arrangement.Center,
@@ -74,16 +74,16 @@ fun SignInScreen(navController: NavController) {
             }
         }
 
-        is SignInState.Success -> {
+        is SignUpState.Success -> {
             Column(
                 modifier = Modifier.fillMaxSize().padding(12.dp),
                 verticalArrangement = Arrangement.Center,
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                Text(text = "Sign In Successful: ${(state.value as SignInState.Success).response.email}")
+                Text(text = "Sign Up Successful: ${(state.value as SignUpState.Success).response.email}")
                 Button(onClick = {
                     viewModel.onSuccessClick(
-                        (state.value as SignInState.Success).response.email
+                        (state.value as SignUpState.Success).response.email
                     )
                 }) {
                     Text(text = "Go to Home")
@@ -91,13 +91,13 @@ fun SignInScreen(navController: NavController) {
             }
         }
 
-        is SignInState.Normal -> {
+        is SignUpState.Normal -> {
             Column(
                 modifier = Modifier.fillMaxSize().padding(12.dp),
                 verticalArrangement = Arrangement.Center,
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                Text(text = "Sign In", fontSize = 32.sp)
+                Text(text = "Sign Up", fontSize = 32.sp)
 
                 Spacer(modifier = Modifier.size(16.dp))
 
@@ -123,16 +123,26 @@ fun SignInScreen(navController: NavController) {
 
                 Spacer(modifier = Modifier.size(16.dp))
 
+                OutlinedTextField(
+                    confirmPasswordState.value,
+                    onValueChange = {
+                        viewModel.onConfirmPasswordChange(it)
+                    },
+                    modifier = Modifier.fillMaxWidth(),
+                    placeholder = { Text(text = "Confirm Password") },
+                    label = { Text(text = "Confirm Password") })
+
+                Spacer(modifier = Modifier.size(16.dp))
 
                 TextButton({
-                    navController.popBackStack()
+                    navController.navigate("signin")
                 }) {
-                    Text(text = "Don't have an account? Sign up")
+                    Text(text = "Already have an account? Sign in")
                 }
 
                 Spacer(modifier = Modifier.size(16.dp))
 
-                Button(onClick = { viewModel.signIn() }, modifier = Modifier.fillMaxWidth()) {
+                Button(onClick = { viewModel.signUp() }, modifier = Modifier.fillMaxWidth()) {
                     Text(text = "Sign Up")
                 }
             }

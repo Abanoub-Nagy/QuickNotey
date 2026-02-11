@@ -34,7 +34,6 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
-import com.example.noteyapp.feature.home.HomeViewModel
 import com.example.noteyapp.data.db.NoteDatabase
 import com.example.noteyapp.model.Note
 import com.example.noteyapp.screen.ListNotesScreen
@@ -58,6 +57,9 @@ fun HomeScreen(
     var showBottomSheet by remember { mutableStateOf(false) }
     val coroutineScope = rememberCoroutineScope()
 
+    val email = navController.currentBackStackEntry?.savedStateHandle?.getStateFlow("email", "")
+        ?.collectAsStateWithLifecycle()
+
     Scaffold(
         floatingActionButton = {
             FloatingActionButton(onClick = {
@@ -79,13 +81,22 @@ fun HomeScreen(
                     modifier = Modifier.fillMaxWidth().padding(16.dp).align(Alignment.CenterStart),
                     fontSize = 32.sp
                 )
-                Image(
-                    painterResource(Res.drawable.user),
-                    contentDescription = "User",
-                    modifier = Modifier.padding(16.dp).clickable {
-                        navController.navigate("signup")
-                    }.align(Alignment.CenterEnd).size(52.dp)
-                )
+                Row(
+                    modifier = Modifier.align(Alignment.CenterEnd),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    email?.value?.let {
+                        Text(it)
+                    }
+                    Image(
+                        painterResource(Res.drawable.user),
+                        contentDescription = "User",
+                        modifier = Modifier.padding(16.dp).clickable {
+                            navController.navigate("signup")
+                        }.size(48.dp)
+                    )
+                }
+
             }
             if (notes.value.isNotEmpty()) {
                 ListNotesScreen(notes.value)

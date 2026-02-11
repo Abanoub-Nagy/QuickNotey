@@ -2,11 +2,36 @@ package com.example.noteyapp.feature.signup
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.noteyapp.model.AuthRequest
+import com.example.noteyapp.data.remote.ApiService
+import com.example.noteyapp.data.remote.HttpClientFactory
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 
 class SignUpViewModel() : ViewModel() {
+
+    private val apiService = ApiService(HttpClientFactory.getHttpClient())
+    private val _state = MutableStateFlow<SignUpState>(SignUpState.Normal)
+    val state = _state.asStateFlow()
+
+    private val _navigation = MutableSharedFlow<AuthNavigation>()
+    val navigation = _navigation.asSharedFlow()
+
+    fun onErrorClick() {
+        viewModelScope.launch {
+            _state.value = SignUpState.Normal
+        }
+    }
+
+    fun onSuccessClick(email: String) {
+        viewModelScope.launch {
+            _navigation.emit(AuthNavigation.NavigateToHome(email))
+        }
+    }
+
     private val _email = MutableStateFlow("")
     val email = _email.asStateFlow()
 
@@ -30,7 +55,14 @@ class SignUpViewModel() : ViewModel() {
 
     fun signUp() {
         viewModelScope.launch {
-
+            val request = AuthRequest(email.value, password.value)
+            _state.value = SignUpState.Loading
+            val result = apiService.signup(request)
+            if (result.isSuccess) {
+                _state.value = SignUpState.Success(result.getOrNull()!!)
+            } else {
+                _state.value = SignUpState.Failure(result.exceptionOrNull()?.message.toString())
+            }
         }
     }
 }
