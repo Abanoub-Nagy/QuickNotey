@@ -6,13 +6,15 @@ import androidx.room.RoomDatabase
 import androidx.room.RoomDatabaseConstructor
 import androidx.sqlite.driver.bundled.BundledSQLiteDriver
 import com.example.noteyapp.model.Note
+import com.example.noteyapp.model.SyncMetadata
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.IO
 
-@Database(entities = [Note::class], version = 1, exportSchema = true)
+@Database(entities = [Note::class, SyncMetadata::class], version = 1, exportSchema = true)
 @ConstructedBy(NoteDatabaseConstructor::class)
 abstract class NoteDatabase : RoomDatabase() {
     abstract fun noteDao(): NoteDao
+    abstract fun syncDataDao(): SyncDataDao
 }
 
 

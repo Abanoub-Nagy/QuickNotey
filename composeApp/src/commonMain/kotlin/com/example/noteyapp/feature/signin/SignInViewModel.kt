@@ -16,7 +16,7 @@ import kotlinx.coroutines.launch
 class SignInViewModel(
     private val dataStoreManager: DataStoreManager
 ) : ViewModel() {
-    private val apiService = ApiService(HttpClientFactory.getHttpClient())
+    private val apiService = ApiService(HttpClientFactory.getHttpClient(), dataStoreManager)
     private val _state = MutableStateFlow<SignInState>(SignInState.Normal)
     val state = _state.asStateFlow()
 

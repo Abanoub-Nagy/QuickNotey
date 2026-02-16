@@ -47,22 +47,3 @@ fun NoteItem(note: Note) {
         )
     }
 }
-
-@Composable
-@Preview
-fun ListNotesScreenPreview() {
-    ListNotesScreen(
-        listOf(
-            Note(
-                title = "This is the first note that i want to show to the users.",
-                description = "Description",
-            ), Note(
-                title = "This is the first note that i want to show to the users.",
-                description = "Description",
-            ), Note(
-                title = "This is the first note that i want to show to the users.",
-                description = "Description",
-            )
-        )
-    )
-}

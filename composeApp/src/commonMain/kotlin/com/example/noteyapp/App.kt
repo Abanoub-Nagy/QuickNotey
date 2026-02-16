@@ -9,6 +9,7 @@ import androidx.navigation.compose.rememberNavController
 import com.example.noteyapp.data.datastore.DataStoreManager
 import com.example.noteyapp.data.db.NoteDatabase
 import com.example.noteyapp.feature.home.HomeScreen
+import com.example.noteyapp.feature.home.HomeViewModel
 import com.example.noteyapp.feature.profile.ProfileScreen
 import com.example.noteyapp.feature.signin.SignInScreen
 import com.example.noteyapp.feature.signup.SignUpScreen
@@ -24,7 +25,9 @@ fun App(
         val navController = rememberNavController()
         NavHost(navController, startDestination = "home") {
             composable(route = "home") {
-                HomeScreen(database, dataStoreManager, navController)
+                HomeScreen(
+                    database, dataStoreManager, navController
+                )
             }
             composable(route = "signup") {
                 SignUpScreen(navController, dataStoreManager)

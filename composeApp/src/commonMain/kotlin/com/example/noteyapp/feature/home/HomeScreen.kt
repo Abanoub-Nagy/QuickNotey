@@ -29,7 +29,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color.Companion.Transparent
 import androidx.compose.ui.text.TextStyle
-import androidx.compose.ui.text.font.FontWeight.Companion.Bold
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -42,6 +41,7 @@ import com.example.noteyapp.screen.ListNotesScreen
 import kotlinx.coroutines.launch
 import noteyapp.composeapp.generated.resources.Res
 import noteyapp.composeapp.generated.resources.empty_logo
+import noteyapp.composeapp.generated.resources.sync
 import noteyapp.composeapp.generated.resources.user
 import org.jetbrains.compose.resources.painterResource
 
@@ -50,11 +50,7 @@ import org.jetbrains.compose.resources.painterResource
 fun HomeScreen(
     database: NoteDatabase, dataStoreManager: DataStoreManager, navController: NavController
 ) {
-    val viewModel = viewModel {
-        HomeViewModel(
-            noteDatabase = database, dataStoreManager = dataStoreManager
-        )
-    }
+    val viewModel = viewModel { HomeViewModel(database, dataStoreManager = dataStoreManager) }
     val bottomSheetState = rememberModalBottomSheetState()
     var showBottomSheet by remember { mutableStateOf(false) }
     val coroutineScope = rememberCoroutineScope()
@@ -65,27 +61,23 @@ fun HomeScreen(
         email.value = dataStoreManager.getEmail() ?: ""
         userID.value = dataStoreManager.getUserId() ?: ""
     }
-
     Scaffold(
         floatingActionButton = {
             FloatingActionButton(onClick = {
                 showBottomSheet = true
             }, shape = CircleShape) {
-                Text(
-                    text = "+", fontSize = 24.sp
-                )
+                Text(text = "+", fontSize = 18.sp)
             }
-        }) { paddingValue ->
+        }) {
+
+
         val notes = viewModel.notes.collectAsStateWithLifecycle(emptyList())
-        Column(
-            modifier = Modifier.padding(paddingValue)
-        ) {
+        Column(modifier = Modifier.padding(it)) {
             Box(modifier = Modifier.fillMaxWidth()) {
                 Text(
                     text = "Notes",
-                    fontWeight = Bold,
-                    modifier = Modifier.fillMaxWidth().padding(16.dp).align(Alignment.CenterStart),
-                    fontSize = 32.sp
+                    modifier = Modifier.fillMaxWidth().padding(16.dp).align(Alignment.Center),
+                    fontSize = 30.sp
                 )
                 Row(
                     modifier = Modifier.align(Alignment.CenterEnd),
@@ -96,19 +88,28 @@ fun HomeScreen(
                     }
                     Image(
                         painterResource(Res.drawable.user),
-                        contentDescription = "User",
-                        modifier = Modifier.padding(16.dp).clickable {
-                            coroutineScope.launch {
-                                if (dataStoreManager.getToken()!= null){
-                                    coroutineScope.launch {
+                        null,
+                        modifier = Modifier.padding(end = 16.dp).size(48.dp).padding(4.dp)
+                            .clickable {
+                                coroutineScope.launch {
+                                    if (dataStoreManager.getToken() != null) {
                                         navController.navigate("profile")
+                                    } else {
+                                        navController.navigate("signup")
                                     }
-                                }else{
-                                    navController.navigate("signup")
                                 }
-                            }
-                        }.size(48.dp)
-                    )
+                            })
+                    if (email.value.isNotEmpty()) {
+                        Image(
+                            painterResource(Res.drawable.sync),
+                            null,
+                            modifier = Modifier.padding(end = 16.dp).size(48.dp).padding(4.dp)
+                                .clickable {
+                                    coroutineScope.launch {
+                                        viewModel.performSync()
+                                    }
+                                })
+                    }
                 }
 
             }
@@ -118,17 +119,18 @@ fun HomeScreen(
                 EmptyView()
             }
         }
+
         if (showBottomSheet) {
-            ModalBottomSheet(
-                onDismissRequest = { showBottomSheet = false }, sheetState = bottomSheetState
-            ) {
-                AddItemDialog(onCancel = {
+            ModalBottomSheet(onDismissRequest = {
+                showBottomSheet = false
+            }, sheetState = bottomSheetState) {
+                AddItemDialog(userID = userID.value, onCancel = {
                     coroutineScope.launch {
                         bottomSheetState.hide()
                     }
                     showBottomSheet = false
                 }, {
-                    viewModel.addNotes(it)
+                    viewModel.addNote(it)
                     coroutineScope.launch {
                         bottomSheetState.hide()
                     }
@@ -140,7 +142,7 @@ fun HomeScreen(
 }
 
 @Composable
-fun AddItemDialog(onCancel: () -> Unit, onSave: (Note) -> Unit) {
+fun AddItemDialog(userID: String, onCancel: () -> Unit, onSave: (Note) -> Unit) {
     var title by remember { mutableStateOf("") }
     var description by remember { mutableStateOf("") }
 
@@ -177,7 +179,7 @@ fun AddItemDialog(onCancel: () -> Unit, onSave: (Note) -> Unit) {
             Text(text = "Save", modifier = Modifier.padding(8.dp).clickable {
                 onSave(
                     Note(
-                        title = title, description = description
+                        title = title, description = description, userId = userID, isDirty = true
                     )
                 )
             })
