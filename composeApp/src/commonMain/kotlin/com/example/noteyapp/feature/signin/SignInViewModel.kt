@@ -2,6 +2,7 @@ package com.example.noteyapp.feature.signin
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.noteyapp.data.datastore.DataStoreManager
 import com.example.noteyapp.data.remote.ApiService
 import com.example.noteyapp.data.remote.HttpClientFactory
 import com.example.noteyapp.feature.signup.AuthNavigation
@@ -12,7 +13,9 @@ import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 
-class SignInViewModel() : ViewModel() {
+class SignInViewModel(
+    private val dataStoreManager: DataStoreManager
+) : ViewModel() {
     private val apiService = ApiService(HttpClientFactory.getHttpClient())
     private val _state = MutableStateFlow<SignInState>(SignInState.Normal)
     val state = _state.asStateFlow()
@@ -54,6 +57,12 @@ class SignInViewModel() : ViewModel() {
             val result = apiService.login(request)
             if (result.isSuccess) {
                 _state.value = SignInState.Success(result.getOrNull()!!)
+                result.getOrNull()?.let {
+                    dataStoreManager.storeEmail(it.email)
+                    dataStoreManager.storeUserId(it.userId)
+                    dataStoreManager.storeRefreshToken(it.refreshToken)
+                    dataStoreManager.storeToken(it.accessToken)
+                }
             } else {
                 _state.value = SignInState.Failure(result.exceptionOrNull()?.message.toString())
             }

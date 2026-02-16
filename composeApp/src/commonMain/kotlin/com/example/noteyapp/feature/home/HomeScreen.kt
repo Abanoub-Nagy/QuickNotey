@@ -19,6 +19,7 @@ import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -34,6 +35,7 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
+import com.example.noteyapp.data.datastore.DataStoreManager
 import com.example.noteyapp.data.db.NoteDatabase
 import com.example.noteyapp.model.Note
 import com.example.noteyapp.screen.ListNotesScreen
@@ -46,19 +48,23 @@ import org.jetbrains.compose.resources.painterResource
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HomeScreen(
-    database: NoteDatabase, navController: NavController
+    database: NoteDatabase, dataStoreManager: DataStoreManager, navController: NavController
 ) {
     val viewModel = viewModel {
         HomeViewModel(
-            database
+            noteDatabase = database, dataStoreManager = dataStoreManager
         )
     }
     val bottomSheetState = rememberModalBottomSheetState()
     var showBottomSheet by remember { mutableStateOf(false) }
     val coroutineScope = rememberCoroutineScope()
 
-    val email = navController.currentBackStackEntry?.savedStateHandle?.getStateFlow("email", "")
-        ?.collectAsStateWithLifecycle()
+    val email = remember { mutableStateOf("") }
+    val userID = remember { mutableStateOf("") }
+    LaunchedEffect(true) {
+        email.value = dataStoreManager.getEmail() ?: ""
+        userID.value = dataStoreManager.getUserId() ?: ""
+    }
 
     Scaffold(
         floatingActionButton = {
@@ -92,7 +98,15 @@ fun HomeScreen(
                         painterResource(Res.drawable.user),
                         contentDescription = "User",
                         modifier = Modifier.padding(16.dp).clickable {
-                            navController.navigate("signup")
+                            coroutineScope.launch {
+                                if (dataStoreManager.getToken()!= null){
+                                    coroutineScope.launch {
+                                        navController.navigate("profile")
+                                    }
+                                }else{
+                                    navController.navigate("signup")
+                                }
+                            }
                         }.size(48.dp)
                     )
                 }

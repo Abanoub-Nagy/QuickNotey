@@ -21,12 +21,15 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
+import com.example.noteyapp.data.datastore.DataStoreManager
 import kotlinx.coroutines.flow.collectLatest
 
 
 @Composable
-fun SignUpScreen(navController: NavController) {
-    val viewModel = viewModel<SignUpViewModel>()
+fun SignUpScreen(navController: NavController,dataStoreManager: DataStoreManager) {
+    val viewModel = viewModel{
+        SignUpViewModel(dataStoreManager)
+    }
     val emailState = viewModel.email.collectAsStateWithLifecycle()
     val passwordState = viewModel.password.collectAsStateWithLifecycle()
     val confirmPasswordState = viewModel.confirmPassword.collectAsStateWithLifecycle()

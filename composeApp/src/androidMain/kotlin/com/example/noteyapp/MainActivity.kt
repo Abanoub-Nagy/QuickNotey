@@ -7,6 +7,7 @@ import androidx.activity.enableEdgeToEdge
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.tooling.preview.Preview
+import com.example.noteyapp.data.datastore.DataStoreManager
 import com.example.noteyapp.data.db.getNoteDatabase
 
 class MainActivity : ComponentActivity() {
@@ -18,6 +19,8 @@ class MainActivity : ComponentActivity() {
             App(
                 database = getNoteDatabase(
                     getDatabaseBuilder(this@MainActivity)
+                ), dataStoreManager = DataStoreManager(
+                    createDataStore(this@MainActivity)
                 )
             )
         }
@@ -28,7 +31,10 @@ class MainActivity : ComponentActivity() {
 @Composable
 fun AppAndroidPreview() {
     val database = getNoteDatabase(getDatabaseBuilder(LocalContext.current))
+    val dataStoreManager = DataStoreManager(
+        createDataStore(LocalContext.current)
+    )
     App(
-        database = database
+        database = database, dataStoreManager = dataStoreManager
     )
 }

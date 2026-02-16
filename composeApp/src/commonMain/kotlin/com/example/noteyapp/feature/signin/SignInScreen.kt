@@ -21,14 +21,17 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
+import com.example.noteyapp.data.datastore.DataStoreManager
 import com.example.noteyapp.feature.signup.AuthNavigation
 import com.example.noteyapp.feature.signup.SignUpState
 import kotlinx.coroutines.flow.collectLatest
 
 
 @Composable
-fun SignInScreen(navController: NavController) {
-    val viewModel = viewModel<SignInViewModel>()
+fun SignInScreen(navController: NavController,dataStoreManager: DataStoreManager) {
+    val viewModel = viewModel{
+        SignInViewModel(dataStoreManager)
+    }
     val emailState = viewModel.email.collectAsStateWithLifecycle()
     val passwordState = viewModel.password.collectAsStateWithLifecycle()
     val state = viewModel.state.collectAsStateWithLifecycle()
@@ -65,7 +68,7 @@ fun SignInScreen(navController: NavController) {
                 verticalArrangement = Arrangement.Center,
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                Text(text = "Error: ${(state.value as SignUpState.Failure).error}")
+                Text(text = "Error: ${(state.value as SignInState.Failure).error}")
                 Button(onClick = {
                     viewModel.onErrorClick()
                 }) {
@@ -133,7 +136,7 @@ fun SignInScreen(navController: NavController) {
                 Spacer(modifier = Modifier.size(16.dp))
 
                 Button(onClick = { viewModel.signIn() }, modifier = Modifier.fillMaxWidth()) {
-                    Text(text = "Sign Up")
+                    Text(text = "Sign In")
                 }
             }
         }

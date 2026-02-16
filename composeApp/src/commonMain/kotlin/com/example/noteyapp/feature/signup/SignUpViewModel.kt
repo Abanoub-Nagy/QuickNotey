@@ -2,6 +2,7 @@ package com.example.noteyapp.feature.signup
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.noteyapp.data.datastore.DataStoreManager
 import com.example.noteyapp.model.AuthRequest
 import com.example.noteyapp.data.remote.ApiService
 import com.example.noteyapp.data.remote.HttpClientFactory
@@ -11,7 +12,9 @@ import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 
-class SignUpViewModel() : ViewModel() {
+class SignUpViewModel(
+    private val dataStoreManager: DataStoreManager
+) : ViewModel() {
 
     private val apiService = ApiService(HttpClientFactory.getHttpClient())
     private val _state = MutableStateFlow<SignUpState>(SignUpState.Normal)
@@ -60,6 +63,12 @@ class SignUpViewModel() : ViewModel() {
             val result = apiService.signup(request)
             if (result.isSuccess) {
                 _state.value = SignUpState.Success(result.getOrNull()!!)
+                result.getOrNull()?.let {
+                    dataStoreManager.storeEmail(it.email)
+                    dataStoreManager.storeUserId(it.userId)
+                    dataStoreManager.storeRefreshToken(it.refreshToken)
+                    dataStoreManager.storeToken(it.accessToken)
+                }
             } else {
                 _state.value = SignUpState.Failure(result.exceptionOrNull()?.message.toString())
             }

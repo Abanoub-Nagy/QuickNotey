@@ -1,18 +1,20 @@
-package com.example.noteyapp
+package com.example.noteyapp.data
 
-import androidx.room.Room
-import androidx.room.RoomDatabase
-import com.example.noteyapp.data.db.NoteDatabase
-import com.example.noteyapp.data.getDocumentPath
+import androidx.datastore.core.DataStore
+import androidx.datastore.preferences.core.Preferences
+import com.example.noteyapp.data.datastore.createDataStore
+import com.example.noteyapp.data.datastore.dataStoreFileName
 import kotlinx.cinterop.ExperimentalForeignApi
 import platform.Foundation.NSDocumentDirectory
 import platform.Foundation.NSFileManager
 import platform.Foundation.NSUserDomainMask
 
 
-fun getDatabaseBuilder(): RoomDatabase.Builder<NoteDatabase> {
-    val dbPath = getDocumentPath() + "/note_database.db"
-    return Room.databaseBuilder(name = dbPath)
+fun createDataStore(): DataStore<Preferences> {
+    return createDataStore(
+        producePath = {
+            getDocumentPath() + "/${dataStoreFileName}"
+        })
 }
 
 @OptIn(ExperimentalForeignApi::class)
