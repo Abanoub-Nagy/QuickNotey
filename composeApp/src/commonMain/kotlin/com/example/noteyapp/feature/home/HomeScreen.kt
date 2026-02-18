@@ -68,9 +68,7 @@ fun HomeScreen(
             }, shape = CircleShape) {
                 Text(text = "+", fontSize = 18.sp)
             }
-        }) {
-
-
+        }) { it ->
         val notes = viewModel.notes.collectAsStateWithLifecycle(emptyList())
         Column(modifier = Modifier.padding(it)) {
             Box(modifier = Modifier.fillMaxWidth()) {
@@ -83,9 +81,7 @@ fun HomeScreen(
                     modifier = Modifier.align(Alignment.CenterEnd),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    email?.value?.let {
-                        Text(it)
-                    }
+                    Text(email.value)
                     Image(
                         painterResource(Res.drawable.user),
                         null,
@@ -114,7 +110,9 @@ fun HomeScreen(
 
             }
             if (notes.value.isNotEmpty()) {
-                ListNotesScreen(notes.value)
+                ListNotesScreen(notes.value, onDeleted = {
+                    viewModel.deleteNote(it)
+                })
             } else {
                 EmptyView()
             }
@@ -129,7 +127,7 @@ fun HomeScreen(
                         bottomSheetState.hide()
                     }
                     showBottomSheet = false
-                }, {
+                }, { it ->
                     viewModel.addNote(it)
                     coroutineScope.launch {
                         bottomSheetState.hide()
