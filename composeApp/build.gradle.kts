@@ -55,7 +55,8 @@ kotlin {
             implementation(libs.kotlinx.serialization.json)
             implementation(libs.androidx.datastore.core)
             implementation(libs.androidx.datastore.preferences.core)
-            implementation("org.jetbrains.compose.material:material-icons-extended:1.7.3")
+            implementation(libs.material.icons.extended)
+            implementation(libs.core.splashscreen)
         }
         iosMain.dependencies {
             implementation(libs.ktor.client.darwin)
