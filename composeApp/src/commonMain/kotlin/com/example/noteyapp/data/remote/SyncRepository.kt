@@ -1,5 +1,6 @@
 package com.example.noteyapp.data.remote
 
+import com.example.noteyapp.data.datastore.DataStoreManager
 import com.example.noteyapp.data.db.NoteDao
 import com.example.noteyapp.data.db.SyncDataDao
 import com.example.noteyapp.model.Note
@@ -15,22 +16,25 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.withContext
 
 class SyncRepository(
-    private val userID: String,
     private val noteDao: NoteDao,
     private val syncDataDao: SyncDataDao,
-    private val apiService: ApiService
+    private val apiService: ApiService,
+    private val dataStoreManager: DataStoreManager
 ) {
 
-    // Internal state for observing Sync status
+    // region Sync state
+
     private val _syncState = MutableStateFlow<SyncState>(SyncState.Idle)
     val syncState = _syncState.asStateFlow()
 
-    // ------------------ New: Flow to observe SyncMetadata from DB ------------------
-    val syncMetadataFlow: Flow<SyncMetadata?> =
-        syncDataDao.observeSyncMetadata()
+    val syncMetadataFlow: Flow<SyncMetadata?> = syncDataDao.observeSyncMetadata()
 
-    // ------------------ Perform Sync ------------------
+    // endregion
+
+    // region Public API
+
     suspend fun performSync() = withContext(Dispatchers.IO) {
+        val userId = dataStoreManager.getUserId() ?: return@withContext
 
         val metadata = syncDataDao.getSyncMetadata()
         if (metadata?.isSyncing == true) return@withContext
@@ -41,82 +45,61 @@ class SyncRepository(
         try {
             val dirtyNotes = noteDao.getDirtyNotes()
             val syncRequest = SyncRequest(
-                since = metadata?.lastSyncTimestamp, changes = dirtyNotes.map { note ->
-                    NoteChange(
-                        id = note.id,
-                        title = note.title,
-                        body = note.description,
-                        isDeleted = note.isDeleted,
-                        updatedAt = note.updatedAt
-                    )
-                })
+                since = metadata?.lastSyncTimestamp, changes = dirtyNotes.map { it.toNoteChange() })
 
-            val result = apiService.sync(syncRequest)
-            result.fold(onSuccess = { response ->
-                processSyncResponse(response)
+            apiService.sync(syncRequest).fold(onSuccess = { response ->
+                processSyncResponse(response, userId)
                 syncDataDao.updateLastSyncTimestamp(response.nextSince)
                 _syncState.value = SyncState.Success(response)
             }, onFailure = { error ->
-                val errorMessage = when (error) {
-                    is ApiError.Network -> "Network error. Please try again."
-                    is ApiError.Unauthorized -> "Unauthorized. Please login again."
-                    is ApiError.Server -> "Server error: ${error.code}"
-                    is ApiError.Unknown -> error.message ?: "Unknown error"
-                    else -> error.message ?: "Sync failed"
-                }
-                _syncState.value = SyncState.Error(errorMessage)
+                _syncState.value =
+                    SyncState.Error(error as? ApiError ?: ApiError.Unknown(error.message))
             })
-
         } finally {
             syncDataDao.updateSyncingStatus(false)
         }
     }
 
-    // ------------------ Process Sync Response ------------------
-    suspend fun processSyncResponse(response: SyncResponse) = withContext(Dispatchers.IO) {
-        // Mark applied notes as synced
+    // endregion
+
+    // region Private helpers
+
+    private suspend fun processSyncResponse(
+        response: SyncResponse, userId: String
+    ) = withContext(Dispatchers.IO) {
         if (response.applied.isNotEmpty()) {
             noteDao.markAsSynced(response.applied)
         }
-
-        // Insert/Update conflict notes from server
-        if (response.conflicts.isNotEmpty()) {
-            val conflictNotes = response.conflicts.map { noteChange ->
-                Note(
-                    id = noteChange.id,
-                    title = noteChange.title,
-                    description = noteChange.body,
-                    isDeleted = noteChange.isDeleted,
-                    updatedAt = noteChange.updatedAt,
-                    isDirty = false,
-                    userId = userID
-                )
-            }
-            noteDao.insertNotes(conflictNotes)
-        }
-
-        // Insert/Update general changes from server
-        if (response.changes.isNotEmpty()) {
-            val serverNotes = response.changes.map { noteChange ->
-                Note(
-                    id = noteChange.id,
-                    title = noteChange.title,
-                    description = noteChange.body,
-                    isDeleted = noteChange.isDeleted,
-                    updatedAt = noteChange.updatedAt,
-                    isDirty = false,
-                    userId = userID
-                )
-            }
-            noteDao.insertNotes(serverNotes)
+        val incomingNotes = (response.conflicts + response.changes)
+        if (incomingNotes.isNotEmpty()) {
+            noteDao.insertNotes(incomingNotes.map { it.toNote(userId) })
         }
     }
+
+    private fun Note.toNoteChange() = NoteChange(
+        id = id, title = title, body = description, isDeleted = isDeleted, updatedAt = updatedAt
+    )
+
+    private fun NoteChange.toNote(userId: String) = Note(
+        id = id,
+        title = title,
+        description = body,
+        isDeleted = isDeleted,
+        updatedAt = updatedAt,
+        isDirty = false,
+        userId = userId
+    )
+
+    // endregion
 }
 
-// ------------------ Sync State ------------------
+// region Sync state
+
 sealed class SyncState {
-    object Idle : SyncState()
-    object Syncing : SyncState()
+    data object Idle : SyncState()
+    data object Syncing : SyncState()
     data class Success(val data: SyncResponse) : SyncState()
-    data class Error(val error: String) : SyncState()
+    data class Error(val error: ApiError) : SyncState()
 }
+
+// endregion

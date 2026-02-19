@@ -3,93 +3,91 @@ package com.example.noteyapp.feature.home
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.noteyapp.data.datastore.DataStoreManager
-import com.example.noteyapp.data.db.NoteDatabase
-import com.example.noteyapp.data.remote.ApiService
-import com.example.noteyapp.data.remote.HttpClientFactory
 import com.example.noteyapp.data.remote.SyncRepository
 import com.example.noteyapp.data.remote.SyncState
 import com.example.noteyapp.model.Note
+import com.example.noteyapp.data.db.NoteDao
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.launchIn
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.onEach
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import kotlin.time.Clock
 import kotlin.time.ExperimentalTime
 
 class HomeViewModel(
-    private val noteDatabase: NoteDatabase,
-    private val dataStoreManager: DataStoreManager
+    private val noteDao: NoteDao,
+    private val dataStoreManager: DataStoreManager,
+    private val syncRepository: SyncRepository?  // null when logged out
 ) : ViewModel() {
 
-    private val dao = noteDatabase.noteDao()
+    // region Notes
 
-    // Notes Flow
-    val notes = dao.getAllNotes()
+    val notes = noteDao.getAllNotes()
 
-    // User email
-    private val _userEmail = MutableStateFlow("")
-    val userEmail: StateFlow<String> = _userEmail
+    // endregion
 
-    // User ID Flow
-    private val _userId = MutableStateFlow("")
-    val userId: StateFlow<String> = _userId
+    // region Auth state
 
-    // Sync repository
-    private var syncRepository: SyncRepository? = null
+    val authState = dataStoreManager.authStateFlow
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.Eagerly,
+            initialValue = DataStoreManager.AuthState()
+        )
 
-    // Helper: check if logged in
-    fun isLoggedIn(): Boolean = _userId.value.isNotEmpty()
+    val isLoggedIn: Boolean get() = authState.value.isLoggedIn
+
+    // endregion
+
+    // region Sync state
+
+    private val _syncState = MutableStateFlow<SyncState>(SyncState.Idle)
+    val syncState: StateFlow<SyncState> = _syncState.asStateFlow()
+
+    // endregion
 
     init {
-        viewModelScope.launch {
-            // Load user info
-            _userEmail.value = dataStoreManager.getEmail() ?: ""
-            _userId.value = dataStoreManager.getUserId() ?: ""
-
-            // Initialize SyncRepository if userId exists
-            val userID = _userId.value
-            if (userID.isNotEmpty()) {
-                val apiService = ApiService(HttpClientFactory.getHttpClient(), dataStoreManager)
-                syncRepository = SyncRepository(
-                    userID, dao, noteDatabase.syncDataDao(), apiService
-                )
-
-                // Collect sync state
-                syncRepository?.syncState?.collectLatest { state ->
-                    when (state) {
-                        is SyncState.Idle -> {}
-                        is SyncState.Syncing -> { /* show loading */ }
-                        is SyncState.Success -> { /* handle success */ }
-                        is SyncState.Error -> { /* handle error */ }
-                    }
-                }
-
-                // Perform initial sync
-                performSync()
-            }
-        }
+        observeSyncState()
+        if (isLoggedIn) performSync()
     }
 
-    // Perform sync via SyncRepository
+    // region Sync
+
+    private fun observeSyncState() {
+        syncRepository?.syncState
+            ?.onEach { _syncState.value = it }
+            ?.launchIn(viewModelScope)
+    }
+
     fun performSync() {
         viewModelScope.launch {
             syncRepository?.performSync()
         }
     }
 
-    // Add or update a note, then sync
+    // endregion
+
+    // region Note operations
+
     fun addNote(note: Note) {
         viewModelScope.launch {
-            dao.insertNote(note)
+            noteDao.insertNote(note)
             performSync()
         }
     }
 
     @OptIn(ExperimentalTime::class)
-    fun deleteNote(it: Note) {
+    fun deleteNote(note: Note) {
         viewModelScope.launch {
-            dao.softDeleteNote(it.id, Clock.System.now().toString())
+            noteDao.softDeleteNote(note.id, Clock.System.now().toString())
             performSync()
         }
     }
+
+    // endregion
 }

@@ -1,4 +1,5 @@
 package com.example.noteyapp.ui.theme
+
 import androidx.compose.ui.graphics.Color
 
 val primaryLight = Color(0xFF01677D)
@@ -72,3 +73,24 @@ val surfaceContainerLowDark = Color(0xFF171C1E)
 val surfaceContainerDark = Color(0xFF1B2023)
 val surfaceContainerHighDark = Color(0xFF252B2D)
 val surfaceContainerHighestDark = Color(0xFF303638)
+
+val BgDeep = Color(0xFF0D0D10)
+val BgSurface = Color(0xFF16161C)
+val BgCard = Color(0xFF1E1E28)
+val BgElevated = Color(0xFF252530)
+val AccentGold = Color(0xFFD4A847)
+val TextPrimary = Color(0xFFF0EDE6)
+val TextMuted = Color(0xFF7A7880)
+val BorderSubtle = Color(0xFF2C2C38)
+val ErrorRed = Color(0xFFE05C5C)
+val ErrorBg = Color(0xFF2A1515)
+val SuccessGreen = Color(0xFF4CAF7D)
+val AccentAmber  = Color(0xFFE8C06A)
+val CardTints = listOf(
+    Color(0xFF1A2030), // cool navy
+    Color(0xFF1E2420), // deep sage
+    Color(0xFF251E2A), // muted plum
+    Color(0xFF252018), // warm umber
+    Color(0xFF1C2226), // slate teal
+    Color(0xFF261E1E), // deep rust
+)
