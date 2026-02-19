@@ -210,7 +210,6 @@ The app uses a fully custom dark theme:
 GitHub Actions workflows are configured for automated builds on push to `master`:
 
 - **`android-build`** — builds a release APK and uploads it as an artifact
-- **`desktop-build`** — packages a desktop release for the current OS
 
 See `.github/workflows/build.yml` for details.
 
