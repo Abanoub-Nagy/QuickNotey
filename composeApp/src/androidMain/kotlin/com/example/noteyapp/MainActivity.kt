@@ -5,7 +5,10 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.tooling.preview.Preview
+import com.example.noteyapp.data.datastore.DataStoreManager
+import com.example.noteyapp.data.db.getNoteDatabase
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -13,7 +16,13 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
 
         setContent {
-            App()
+            App(
+                database = getNoteDatabase(
+                    getDatabaseBuilder(this@MainActivity)
+                ), dataStoreManager = DataStoreManager(
+                    createDataStore(this@MainActivity)
+                )
+            )
         }
     }
 }
@@ -21,5 +30,11 @@ class MainActivity : ComponentActivity() {
 @Preview
 @Composable
 fun AppAndroidPreview() {
-    App()
+    val database = getNoteDatabase(getDatabaseBuilder(LocalContext.current))
+    val dataStoreManager = DataStoreManager(
+        createDataStore(LocalContext.current)
+    )
+    App(
+        database = database, dataStoreManager = dataStoreManager
+    )
 }

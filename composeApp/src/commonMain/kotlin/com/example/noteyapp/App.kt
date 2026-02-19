@@ -1,48 +1,55 @@
 package com.example.noteyapp
 
-import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.foundation.Image
-import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.safeContentPadding
-import androidx.compose.material3.Button
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
-import androidx.compose.runtime.*
-import androidx.compose.ui.Alignment
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.tooling.preview.Preview
-import org.jetbrains.compose.resources.painterResource
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.runtime.Composable
+import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.navigation.compose.NavHost
+import androidx.navigation.compose.composable
+import androidx.navigation.compose.rememberNavController
+import com.example.noteyapp.data.datastore.DataStoreManager
+import com.example.noteyapp.data.db.NoteDatabase
+import com.example.noteyapp.feature.home.HomeScreen
+import com.example.noteyapp.feature.home.HomeViewModel
+import com.example.noteyapp.feature.profile.ProfileScreen
+import com.example.noteyapp.feature.profile.ProfileViewModel
+import com.example.noteyapp.feature.signin.SignInScreen
+import com.example.noteyapp.feature.signup.SignUpScreen
+import com.example.noteyapp.ui.theme.NoteyTheme
 
-import noteyapp.composeapp.generated.resources.Res
-import noteyapp.composeapp.generated.resources.compose_multiplatform
-
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-@Preview
-fun App() {
-    MaterialTheme {
-        var showContent by remember { mutableStateOf(false) }
-        Column(
-            modifier = Modifier
-                .background(MaterialTheme.colorScheme.primaryContainer)
-                .safeContentPadding()
-                .fillMaxSize(),
-            horizontalAlignment = Alignment.CenterHorizontally,
-        ) {
-            Button(onClick = { showContent = !showContent }) {
-                Text("Click me!")
+fun App(
+    database: NoteDatabase,
+    dataStoreManager: DataStoreManager
+) {
+    NoteyTheme {
+        val navController = rememberNavController()
+        val factory = AppViewModelFactory(database, dataStoreManager)
+
+        NavHost(navController, startDestination = "home") {
+            composable("home") {
+                HomeScreen(
+                    viewModel = viewModel<HomeViewModel>(factory = factory),
+                    navController = navController
+                )
             }
-            AnimatedVisibility(showContent) {
-                val greeting = remember { Greeting().greet() }
-                Column(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                ) {
-                    Image(painterResource(Res.drawable.compose_multiplatform), null)
-                    Text("Compose: $greeting")
-                }
+            composable("signup") {
+                SignUpScreen(
+                    navController = navController,
+                    dataStoreManager = dataStoreManager
+                )
+            }
+            composable("signin") {
+                SignInScreen(
+                    navController = navController,
+                    dataStoreManager = dataStoreManager
+                )
+            }
+            composable("profile") {
+                ProfileScreen(
+                    viewModel = viewModel<ProfileViewModel>(factory = factory),
+                    navController = navController
+                )
             }
         }
     }
