@@ -9,7 +9,6 @@ plugins {
     alias(libs.plugins.androidx.room)
     alias(libs.plugins.ksp)
     alias(libs.plugins.kotlinSerialization)
-    id("com.google.gms.google-services")
 }
 
 kotlin {
@@ -34,9 +33,7 @@ kotlin {
             implementation(libs.androidx.activity.compose)
             implementation(libs.androidx.room.sqlite.wrapper)
             implementation(libs.ktor.client.okhttp)
-            implementation("com.google.firebase:firebase-bom:34.9.0")
-            implementation("com.google.firebase:firebase-analytics")
-
+            implementation("com.google.firebase:firebase-analytics-ktx:22.1.2")
         }
         commonMain.dependencies {
             implementation(libs.compose.runtime)
@@ -60,7 +57,6 @@ kotlin {
             implementation(libs.androidx.datastore.preferences.core)
             implementation(libs.material.icons.extended)
             implementation(libs.core.splashscreen)
-            implementation("dev.gitlive:firebase-analytics:2.1.0")
         }
         iosMain.dependencies {
             implementation(libs.ktor.client.darwin)
