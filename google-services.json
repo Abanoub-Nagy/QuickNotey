@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "50863940870",
+    "project_id": "quicknotey",
+    "storage_bucket": "quicknotey.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:50863940870:android:290c6c163368a532142a87",
+        "android_client_info": {
+          "package_name": "com.example.noteyapp"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBVwQvrFPwKV_f4Hd18JHb6w5SUNfGE2aA"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
