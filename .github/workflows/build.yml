@@ -33,22 +33,27 @@ jobs:
             ~/.gradle/wrapper
           key: gradle-${{ runner.os }}-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
 
-      - name: Build Android APK
-        run: ./gradlew :composeApp:assembleRelease
-
       - name: Setup Android Build Tools
         run: |
           ${ANDROID_HOME}/cmdline-tools/latest/bin/sdkmanager "build-tools;34.0.0"
-          echo "ANDROID_BUILD_TOOLS_VERSION=34.0.0" >> $GITHUB_ENV
+
+      - name: Build Android APK
+        run: ./gradlew :composeApp:assembleRelease
 
       - name: Sign APK
-        uses: r0adkll/sign-android-release@v1
-        with:
-          releaseDirectory: composeApp/build/outputs/apk/release
-          signingKeyBase64: ${{ secrets.ANDROID_SIGNING_KEY }}
-          alias: ${{ secrets.ANDROID_KEY_ALIAS }}
-          keyStorePassword: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
-          keyPassword: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: |
+          BUILD_TOOLS=${ANDROID_HOME}/build-tools/34.0.0
+          echo "${{ secrets.ANDROID_SIGNING_KEY }}" | base64 -d > /tmp/keystore.jks
+          ${BUILD_TOOLS}/zipalign -v -p 4 \
+            composeApp/build/outputs/apk/release/composeApp-release-unsigned.apk \
+            composeApp/build/outputs/apk/release/composeApp-release-aligned.apk
+          ${BUILD_TOOLS}/apksigner sign \
+            --ks /tmp/keystore.jks \
+            --ks-key-alias ${{ secrets.ANDROID_KEY_ALIAS }} \
+            --ks-pass pass:${{ secrets.ANDROID_KEYSTORE_PASSWORD }} \
+            --key-pass pass:${{ secrets.ANDROID_KEY_PASSWORD }} \
+            --out composeApp/build/outputs/apk/release/composeApp-release-signed.apk \
+            composeApp/build/outputs/apk/release/composeApp-release-aligned.apk
 
       - name: Upload to Firebase App Distribution
         uses: wzieba/Firebase-Distribution-Github-Action@v1
