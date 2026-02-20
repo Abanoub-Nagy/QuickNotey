@@ -36,9 +36,9 @@ jobs:
       - name: Build Android APK
         run: ./gradlew :composeApp:assembleRelease
 
-      - name: Upload Android APK
-        uses: actions/upload-artifact@v4
+      - name: Sign APK
+        uses: r0adkll/sign-android-release@v1
         with:
-          name: quicknotey-android-release
-          path: composeApp/build/outputs/apk/release/*.apk
-
+          releaseDirectory: composeApp/build/outputs/apk/release
+          signingKeyBase64: ${{ secrets.ANDROID_SIGNING_KEY }}
+          alias
